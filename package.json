@@ -1,0 +1,21 @@
+{
+  "name": "bookmark-dupes",
+  "version": "0.1.0",
+  "description": "Find duplicate URLs in an exported browser bookmarks file",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "bookmark-dupes": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/node": "^20.14.0"
+  }
+}
