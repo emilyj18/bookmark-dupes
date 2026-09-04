@@ -30,6 +30,9 @@ npm run build
 node dist/index.js bookmarks.html
 ```
 
+Run the tests with `npm test` (uses Node's built-in test runner, no extra
+dependencies).
+
 Human-readable output:
 
 ```
@@ -70,6 +73,7 @@ different tabs.
 
 ## Status
 
-Early skeleton. The HTML parser assumes a well-formed export from a
-mainstream browser and hasn't been run against real-world edge cases yet
-(see below).
+Early skeleton. The parser and `normalizeUrl` have unit test coverage, but
+the parser still assumes a well-formed export from a mainstream browser and
+hasn't been run against real-world edge cases yet - malformed HTML and
+deeply nested or mismatched folder structures could still break it.

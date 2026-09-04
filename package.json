@@ -8,7 +8,9 @@
     "bookmark-dupes": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "pretest": "tsc",
+    "test": "node --test dist"
   },
   "license": "MIT",
   "engines": {

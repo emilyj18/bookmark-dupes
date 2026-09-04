@@ -1,25 +1,12 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
 import { parseBookmarksHtml, type Bookmark } from './parser.js';
+import { normalizeUrl } from './normalizeUrl.js';
 
 interface DuplicateGroup {
   url: string;
   count: number;
   entries: { title: string; folder: string }[];
-}
-
-function normalizeUrl(url: string): string {
-  // trailing slashes and url fragments are cosmetic - the same page saved
-  // from two different tabs shouldn't count as two different bookmarks
-  try {
-    const parsed = new URL(url);
-    parsed.hash = '';
-    let path = parsed.pathname;
-    if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
-    return `${parsed.host}${path}${parsed.search}`;
-  } catch {
-    return url;
-  }
 }
 
 function findDuplicates(bookmarks: Bookmark[]): DuplicateGroup[] {
