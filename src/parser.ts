@@ -19,7 +19,11 @@ const ADD_DATE_RE = /ADD_DATE="(\d+)"/i;
 
 export function parseBookmarksHtml(html: string): Bookmark[] {
   const bookmarks: Bookmark[] = [];
-  const stack: string[] = [];
+  // null entries are anonymous DL wrappers (the top-level DL, or a stray
+  // extra one some exporters emit) - they still need to occupy a stack
+  // slot so a later </DL> pops the right level, but they must not turn
+  // into an empty path segment when joined
+  const stack: (string | null)[] = [];
   let pendingFolder: string | null = null;
 
   TOKEN_RE.lastIndex = 0;
@@ -39,16 +43,14 @@ export function parseBookmarksHtml(html: string): Bookmark[] {
       bookmarks.push({
         title: decodeEntities((linkTitle ?? '').trim()),
         url: hrefMatch[1],
-        folder: stack.join('/'),
+        folder: stack.filter((segment): segment is string => segment !== null).join('/'),
         addDate: addDateMatch ? Number(addDateMatch[1]) : undefined,
       });
       continue;
     }
 
     if (/^<DL>/i.test(full)) {
-      // a folder's <DL> follows its <H3>; the top-level <DL> has no
-      // preceding header, so it opens as an unnamed root segment
-      stack.push(pendingFolder ?? '');
+      stack.push(pendingFolder);
       pendingFolder = null;
     } else if (/^<\/DL>/i.test(full)) {
       stack.pop();

@@ -73,7 +73,8 @@ different tabs.
 
 ## Status
 
-Early skeleton. The parser and `normalizeUrl` have unit test coverage, but
-the parser still assumes a well-formed export from a mainstream browser and
-hasn't been run against real-world edge cases yet - malformed HTML and
-deeply nested or mismatched folder structures could still break it.
+Early skeleton. The parser and `normalizeUrl` have unit test coverage,
+including deeply nested folders, stray duplicate `<DL><p>` wrappers, and
+unmatched closing tags, so it shouldn't crash or scramble folder paths on a
+slightly malformed export. It still hasn't been run against a real export
+from each of the major browsers - only against hand-written fixtures.

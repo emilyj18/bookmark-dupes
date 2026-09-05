@@ -92,3 +92,53 @@ test('skips links without an HREF', () => {
 test('returns an empty list for input with no links', () => {
   assert.deepEqual(parseBookmarksHtml('<DL><p></DL><p>'), []);
 });
+
+test('does not insert an empty segment for a stray extra DL wrapper', () => {
+  // some exporters double-wrap a folder's contents in an extra <DL><p>
+  // with no <H3> of its own
+  const html = `
+    <DL><p>
+      <DT><H3>Work</H3>
+      <DL><p>
+        <DL><p>
+          <DT><A HREF="https://example.com/a">A</A>
+        </DL><p>
+      </DL><p>
+    </DL><p>
+  `;
+  const [bookmark] = parseBookmarksHtml(html);
+  assert.equal(bookmark.folder, 'Work');
+});
+
+test('does not crash on an unmatched trailing closing tag', () => {
+  const html = `
+    <DL><p>
+      <DT><A HREF="https://example.com/a">A</A>
+    </DL><p>
+    </DL><p>
+  `;
+  const bookmarks = parseBookmarksHtml(html);
+  assert.equal(bookmarks.length, 1);
+  assert.equal(bookmarks[0].folder, '');
+});
+
+test('does not crash on a folder missing its closing tag', () => {
+  const html = `
+    <DL><p>
+      <DT><H3>Work</H3>
+      <DL><p>
+        <DT><A HREF="https://example.com/a">A</A>
+  `;
+  const bookmarks = parseBookmarksHtml(html);
+  assert.equal(bookmarks.length, 1);
+  assert.equal(bookmarks[0].folder, 'Work');
+});
+
+test('handles folders several levels deeper than typical exports', () => {
+  const depth = 25;
+  const open = '<DT><H3>F</H3>\n<DL><p>\n'.repeat(depth);
+  const close = '</DL><p>\n'.repeat(depth);
+  const html = `<DL><p>${open}<DT><A HREF="https://example.com/deep">Deep</A>${close}</DL><p>`;
+  const [bookmark] = parseBookmarksHtml(html);
+  assert.equal(bookmark.folder, Array(depth).fill('F').join('/'));
+});
