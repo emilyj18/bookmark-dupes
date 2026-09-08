@@ -9,6 +9,28 @@ interface DuplicateGroup {
   entries: { title: string; folder: string }[];
 }
 
+// a folder filter of "Work" should match "Work" and "Work/Reading" but not
+// "Personal/Work" or a sibling folder like "Work2"
+export function folderMatches(folder: string, filter: string): boolean {
+  return folder === filter || folder.startsWith(`${filter}/`);
+}
+
+interface ParsedArgs {
+  file?: string;
+  jsonMode: boolean;
+  folder?: string;
+}
+
+export function parseArgs(args: string[]): ParsedArgs {
+  const jsonMode = args.includes('--json');
+  const folderIndex = args.indexOf('--folder');
+  const folderValue = folderIndex === -1 ? undefined : args[folderIndex + 1];
+  const folder = folderValue?.startsWith('--') ? undefined : folderValue;
+  const skip = new Set([folderIndex, folderIndex + 1]);
+  const file = args.find((arg, i) => !skip.has(i) && !arg.startsWith('--'));
+  return { file, jsonMode, folder };
+}
+
 function findDuplicates(bookmarks: Bookmark[]): DuplicateGroup[] {
   const byUrl = new Map<string, Bookmark[]>();
   for (const bookmark of bookmarks) {
@@ -55,12 +77,10 @@ function printHuman(duplicates: DuplicateGroup[]): void {
 }
 
 function main(): void {
-  const args = process.argv.slice(2);
-  const jsonMode = args.includes('--json');
-  const file = args.find((arg) => !arg.startsWith('--'));
+  const { file, jsonMode, folder } = parseArgs(process.argv.slice(2));
 
-  if (!file) {
-    console.error('usage: bookmark-dupes <bookmarks.html> [--json]');
+  if (!file || (process.argv.includes('--folder') && !folder)) {
+    console.error('usage: bookmark-dupes <bookmarks.html> [--json] [--folder <path>]');
     process.exitCode = 1;
     return;
   }
@@ -74,7 +94,10 @@ function main(): void {
     return;
   }
 
-  const bookmarks = parseBookmarksHtml(html);
+  const allBookmarks = parseBookmarksHtml(html);
+  const bookmarks = folder === undefined
+    ? allBookmarks
+    : allBookmarks.filter((bookmark) => folderMatches(bookmark.folder, folder));
   const duplicates = findDuplicates(bookmarks);
 
   if (jsonMode) {
@@ -86,4 +109,7 @@ function main(): void {
   }
 }
 
-main();
+// guard so importing this module for tests doesn't also run the CLI
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
+}

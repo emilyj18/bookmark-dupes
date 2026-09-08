@@ -71,10 +71,25 @@ URLs are normalized before comparison (trailing slash and `#fragment`
 removed) so the same page isn't missed just because it was saved from two
 different tabs.
 
+## Scoping the search to one folder
+
+Large exports (years of Chrome syncing across machines) can turn up
+duplicates you don't care about right now. `--folder` limits the search to
+one folder and everything under it:
+
+```
+node dist/index.js bookmarks.html --folder Work/Reading
+```
+
+The match is on the full folder path from the root, so `--folder Work`
+matches `Work` and `Work/Reading` but not `Personal/Work` or a sibling
+folder like `Work2`. It can be combined with `--json`.
+
 ## Status
 
-Early skeleton. The parser and `normalizeUrl` have unit test coverage,
-including deeply nested folders, stray duplicate `<DL><p>` wrappers, and
-unmatched closing tags, so it shouldn't crash or scramble folder paths on a
-slightly malformed export. It still hasn't been run against a real export
-from each of the major browsers - only against hand-written fixtures.
+Early skeleton. The parser, `normalizeUrl`, and the CLI's argument parsing
+and folder matching have unit test coverage, including deeply nested
+folders, stray duplicate `<DL><p>` wrappers, and unmatched closing tags, so
+it shouldn't crash or scramble folder paths on a slightly malformed export.
+It still hasn't been run against a real export from each of the major
+browsers - only against hand-written fixtures.
