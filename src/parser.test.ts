@@ -142,3 +142,97 @@ test('handles folders several levels deeper than typical exports', () => {
   const [bookmark] = parseBookmarksHtml(html);
   assert.equal(bookmark.folder, Array(depth).fill('F').join('/'));
 });
+
+// The fixtures below mirror the real export format of each browser rather
+// than the minimal hand-written HTML above: the DOCTYPE/META/TITLE preamble,
+// the extra attributes each browser stamps onto <H3> and <A>, and the
+// browser-specific quirks (Chrome/Firefox's base64 ICON data URIs, Firefox's
+// <HR> separators and ICON_URI, Safari's valueless FOLDED attribute).
+
+test('parses a Chrome-style export', () => {
+  const html = `
+    <!DOCTYPE NETSCAPE-Bookmark-file-1>
+    <!-- This is an automatically generated file.
+         It will be read and overwritten.
+         DO NOT EDIT! -->
+    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+    <TITLE>Bookmarks</TITLE>
+    <H1>Bookmarks</H1>
+    <DL><p>
+        <DT><H3 ADD_DATE="1700000000" LAST_MODIFIED="1700000100" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks bar</H3>
+        <DL><p>
+            <DT><A HREF="https://example.com/one" ADD_DATE="1700000200" ICON="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA">Site One</A>
+            <DT><H3 ADD_DATE="1700000300" LAST_MODIFIED="1700000400">Work</H3>
+            <DL><p>
+                <DT><A HREF="https://example.com/two" ADD_DATE="1700000500">Site Two</A>
+            </DL><p>
+        </DL><p>
+    </DL><p>
+  `;
+  const bookmarks = parseBookmarksHtml(html);
+  assert.equal(bookmarks.length, 2);
+  assert.equal(bookmarks[0].url, 'https://example.com/one');
+  assert.equal(bookmarks[0].folder, 'Bookmarks bar');
+  assert.equal(bookmarks[1].url, 'https://example.com/two');
+  assert.equal(bookmarks[1].folder, 'Bookmarks bar/Work');
+});
+
+test('parses a Firefox-style export, ignoring <HR> separators', () => {
+  const html = `
+    <!DOCTYPE NETSCAPE-Bookmark-file-1>
+    <!-- This is an automatically generated file.
+         It will be read and overwritten.
+         DO NOT EDIT! -->
+    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+    <TITLE>Bookmarks</TITLE>
+    <H1>Bookmarks Menu</H1>
+
+    <DL><p>
+        <DT><H3 ADD_DATE="1700000000" LAST_MODIFIED="1700000100" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>
+        <DL><p>
+            <DT><A HREF="https://example.com/three" ADD_DATE="1700000200" LAST_MODIFIED="1700000200" ICON_URI="fake-favicon-uri:https://example.com/three" ICON="data:image/png;base64,AAAA">Site Three</A>
+            <DT><HR>
+            <DT><A HREF="https://example.com/four" ADD_DATE="1700000300">Site Four</A>
+        </DL><p>
+        <DT><H3 ADD_DATE="1700000400" LAST_MODIFIED="1700000400">Other Bookmarks</H3>
+        <DL><p>
+            <DT><A HREF="https://example.com/five" ADD_DATE="1700000500">Site Five</A>
+        </DL><p>
+    </DL><p>
+  `;
+  const bookmarks = parseBookmarksHtml(html);
+  assert.equal(bookmarks.length, 3);
+  assert.deepEqual(bookmarks.map((b) => b.url), [
+    'https://example.com/three',
+    'https://example.com/four',
+    'https://example.com/five',
+  ]);
+  assert.equal(bookmarks[0].folder, 'Bookmarks Toolbar');
+  assert.equal(bookmarks[1].folder, 'Bookmarks Toolbar');
+  assert.equal(bookmarks[2].folder, 'Other Bookmarks');
+});
+
+test('parses a Safari-style export with a valueless FOLDED attribute', () => {
+  const html = `
+    <!DOCTYPE NETSCAPE-Bookmark-file-1>
+    <!-- This is an automatically generated file.
+         It will be read and overwritten.
+         Do Not Edit! -->
+    <META http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <Title>Bookmarks</Title>
+    <H1>Bookmarks</H1>
+    <DL><p>
+        <DT><H3 FOLDED>Favorites</H3>
+        <DL><p>
+            <DT><A HREF="https://example.com/six">Site Six</A>
+        </DL><p>
+        <DT><H3 FOLDED>com.apple.ReadingList</H3>
+        <DL><p>
+        </DL><p>
+    </DL><p>
+  `;
+  const bookmarks = parseBookmarksHtml(html);
+  assert.equal(bookmarks.length, 1);
+  assert.equal(bookmarks[0].url, 'https://example.com/six');
+  assert.equal(bookmarks[0].folder, 'Favorites');
+});

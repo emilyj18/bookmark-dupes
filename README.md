@@ -91,5 +91,9 @@ Early skeleton. The parser, `normalizeUrl`, and the CLI's argument parsing
 and folder matching have unit test coverage, including deeply nested
 folders, stray duplicate `<DL><p>` wrappers, and unmatched closing tags, so
 it shouldn't crash or scramble folder paths on a slightly malformed export.
-It still hasn't been run against a real export from each of the major
-browsers - only against hand-written fixtures.
+The parser tests also include fixtures modeled on the real output of Chrome,
+Firefox, and Safari - the DOCTYPE/META preamble each one emits, Chrome and
+Firefox's base64 `ICON` data URIs, Firefox's `ICON_URI` attribute and `<HR>`
+separators between bookmarks, and Safari's valueless `FOLDED` attribute. It
+still hasn't been run against an export file saved by an actual browser,
+only against fixtures built to match their known format.
