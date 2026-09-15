@@ -1,6 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { folderMatches, parseArgs } from './index.js';
+import { folderMatches, parseArgs, findDuplicates } from './index.js';
+import type { Bookmark } from './parser.js';
+
+function bookmark(overrides: Partial<Bookmark>): Bookmark {
+  return { title: 'Untitled', url: 'https://example.com', folder: '', ...overrides };
+}
 
 test('folderMatches: matches the folder itself', () => {
   assert.equal(folderMatches('Work', 'Work'), true);
@@ -51,4 +56,61 @@ test('parseArgs: a --folder with no value does not swallow a following flag', ()
 test('parseArgs: missing file leaves file undefined', () => {
   const parsed = parseArgs(['--json']);
   assert.equal(parsed.file, undefined);
+});
+
+test('findDuplicates: returns nothing when every URL is unique', () => {
+  const bookmarks = [
+    bookmark({ url: 'https://example.com/a' }),
+    bookmark({ url: 'https://example.com/b' }),
+  ];
+  assert.deepEqual(findDuplicates(bookmarks), []);
+});
+
+test('findDuplicates: groups bookmarks that normalize to the same URL', () => {
+  const bookmarks = [
+    bookmark({ url: 'https://example.com/page', title: 'Page' }),
+    bookmark({ url: 'https://example.com/page/#section', title: 'Page (copy)' }),
+  ];
+  const duplicates = findDuplicates(bookmarks);
+  assert.equal(duplicates.length, 1);
+  assert.equal(duplicates[0].url, 'example.com/page');
+  assert.equal(duplicates[0].count, 2);
+});
+
+test('findDuplicates: labels an empty folder as (root)', () => {
+  const bookmarks = [
+    bookmark({ url: 'https://example.com/page', folder: '' }),
+    bookmark({ url: 'https://example.com/page', folder: 'Work' }),
+  ];
+  const [group] = findDuplicates(bookmarks);
+  assert.deepEqual(
+    group.entries.map((e) => e.folder),
+    ['(root)', 'Work']
+  );
+});
+
+test('findDuplicates: sorts groups by copy count, most first', () => {
+  const bookmarks = [
+    bookmark({ url: 'https://example.com/a' }),
+    bookmark({ url: 'https://example.com/a' }),
+    bookmark({ url: 'https://example.com/b' }),
+    bookmark({ url: 'https://example.com/b' }),
+    bookmark({ url: 'https://example.com/b' }),
+  ];
+  const duplicates = findDuplicates(bookmarks);
+  assert.deepEqual(
+    duplicates.map((d) => d.url),
+    ['example.com/b', 'example.com/a']
+  );
+});
+
+test('findDuplicates: a lone bookmark never forms a group of one', () => {
+  const bookmarks = [
+    bookmark({ url: 'https://example.com/a' }),
+    bookmark({ url: 'https://example.com/b' }),
+    bookmark({ url: 'https://example.com/b' }),
+  ];
+  const duplicates = findDuplicates(bookmarks);
+  assert.equal(duplicates.length, 1);
+  assert.equal(duplicates[0].url, 'example.com/b');
 });

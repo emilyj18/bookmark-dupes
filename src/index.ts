@@ -31,7 +31,7 @@ export function parseArgs(args: string[]): ParsedArgs {
   return { file, jsonMode, folder };
 }
 
-function findDuplicates(bookmarks: Bookmark[]): DuplicateGroup[] {
+export function findDuplicates(bookmarks: Bookmark[]): DuplicateGroup[] {
   const byUrl = new Map<string, Bookmark[]>();
   for (const bookmark of bookmarks) {
     const key = normalizeUrl(bookmark.url);

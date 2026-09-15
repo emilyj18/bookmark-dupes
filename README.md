@@ -87,10 +87,11 @@ folder like `Work2`. It can be combined with `--json`.
 
 ## Status
 
-Early skeleton. The parser, `normalizeUrl`, and the CLI's argument parsing
-and folder matching have unit test coverage, including deeply nested
-folders, stray duplicate `<DL><p>` wrappers, and unmatched closing tags, so
-it shouldn't crash or scramble folder paths on a slightly malformed export.
+Early skeleton. The parser, `normalizeUrl`, and the CLI's argument parsing,
+folder matching, and duplicate-grouping logic have unit test coverage,
+including deeply nested folders, stray duplicate `<DL><p>` wrappers, and
+unmatched closing tags, so it shouldn't crash or scramble folder paths on a
+slightly malformed export.
 The parser tests also include fixtures modeled on the real output of Chrome,
 Firefox, and Safari - the DOCTYPE/META preamble each one emits, Chrome and
 Firefox's base64 `ICON` data URIs, Firefox's `ICON_URI` attribute and `<HR>`
