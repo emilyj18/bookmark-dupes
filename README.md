@@ -85,6 +85,22 @@ The match is on the full folder path from the root, so `--folder Work`
 matches `Work` and `Work/Reading` but not `Personal/Work` or a sibling
 folder like `Work2`. It can be combined with `--json`.
 
+## Bookmarks with the same title but different URLs
+
+Some duplicates survive URL normalization: the mobile and desktop versions
+of a page, or a link with a tracking parameter. `--similar-titles` reports
+bookmarks that share a title but point at different URLs:
+
+```
+node dist/index.js bookmarks.html --similar-titles
+```
+
+Titles are compared ignoring case, punctuation, accents, and a trailing
+`(2)` copy counter. Groups where every entry normalizes to the same URL are
+left out, since the normal report already covers them. With `--json` the
+output has a `similarTitles` array instead of `duplicates`. It combines with
+`--folder`.
+
 ## Status
 
 Early skeleton. The parser, `normalizeUrl`, and the CLI's argument parsing,

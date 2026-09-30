@@ -33,12 +33,24 @@ test('parseArgs: reads the file, --json, and --folder together', () => {
     file: 'bookmarks.html',
     jsonMode: true,
     folder: 'Work/Reading',
+    similarTitles: false,
   });
 });
 
 test('parseArgs: works with no flags', () => {
   const parsed = parseArgs(['bookmarks.html']);
-  assert.deepEqual(parsed, { file: 'bookmarks.html', jsonMode: false, folder: undefined });
+  assert.deepEqual(parsed, {
+    file: 'bookmarks.html',
+    jsonMode: false,
+    folder: undefined,
+    similarTitles: false,
+  });
+});
+
+test('parseArgs: reads --similar-titles', () => {
+  const parsed = parseArgs(['bookmarks.html', '--similar-titles']);
+  assert.equal(parsed.similarTitles, true);
+  assert.equal(parsed.file, 'bookmarks.html');
 });
 
 test('parseArgs: --folder value is not mistaken for the input file', () => {

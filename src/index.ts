@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { parseBookmarksHtml, type Bookmark } from './parser.js';
 import { normalizeUrl } from './normalizeUrl.js';
+import { findSimilarTitles, type SimilarTitleGroup } from './similarTitles.js';
 
 interface DuplicateGroup {
   url: string;
@@ -19,16 +20,18 @@ interface ParsedArgs {
   file?: string;
   jsonMode: boolean;
   folder?: string;
+  similarTitles: boolean;
 }
 
 export function parseArgs(args: string[]): ParsedArgs {
   const jsonMode = args.includes('--json');
+  const similarTitles = args.includes('--similar-titles');
   const folderIndex = args.indexOf('--folder');
   const folderValue = folderIndex === -1 ? undefined : args[folderIndex + 1];
   const folder = folderValue?.startsWith('--') ? undefined : folderValue;
   const skip = new Set([folderIndex, folderIndex + 1]);
   const file = args.find((arg, i) => !skip.has(i) && !arg.startsWith('--'));
-  return { file, jsonMode, folder };
+  return { file, jsonMode, folder, similarTitles };
 }
 
 export function findDuplicates(bookmarks: Bookmark[]): DuplicateGroup[] {
@@ -76,11 +79,29 @@ function printHuman(duplicates: DuplicateGroup[]): void {
   console.log(`${duplicates.length} duplicate URL(s) found.`);
 }
 
+function printSimilarTitles(groups: SimilarTitleGroup[]): void {
+  if (groups.length === 0) {
+    console.log('No bookmarks with matching titles and different URLs found.');
+    return;
+  }
+
+  for (const group of groups) {
+    console.log(`"${group.title}"  (${group.entries.length} bookmarks)`);
+    for (const entry of group.entries) {
+      console.log(`  - ${entry.url} in ${entry.folder}`);
+    }
+    console.log('');
+  }
+  console.log(`${groups.length} title(s) shared by different URLs.`);
+}
+
 function main(): void {
-  const { file, jsonMode, folder } = parseArgs(process.argv.slice(2));
+  const { file, jsonMode, folder, similarTitles } = parseArgs(process.argv.slice(2));
 
   if (!file || (process.argv.includes('--folder') && !folder)) {
-    console.error('usage: bookmark-dupes <bookmarks.html> [--json] [--folder <path>]');
+    console.error(
+      'usage: bookmark-dupes <bookmarks.html> [--json] [--folder <path>] [--similar-titles]'
+    );
     process.exitCode = 1;
     return;
   }
@@ -98,6 +119,19 @@ function main(): void {
   const bookmarks = folder === undefined
     ? allBookmarks
     : allBookmarks.filter((bookmark) => folderMatches(bookmark.folder, folder));
+
+  if (similarTitles) {
+    const groups = findSimilarTitles(bookmarks);
+    if (jsonMode) {
+      console.log(
+        JSON.stringify({ totalBookmarks: bookmarks.length, similarTitles: groups }, null, 2)
+      );
+    } else {
+      printSimilarTitles(groups);
+    }
+    return;
+  }
+
   const duplicates = findDuplicates(bookmarks);
 
   if (jsonMode) {
